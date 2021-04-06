@@ -1,7 +1,16 @@
 #!/bin/sh
 
 # Written by Aleem Cummins - Splunk Study Club
-# Version 1.02 April 5th 2021
+# aleem@studysplunk.club
+
+# This script is desiged for the free tier of AWS 
+# Problems being addressed: 
+# 1. IP of instances changes on every restart
+# 2. Instances need to be shut down to minimise costs
+# 3. Splunk instances communcation breaks on restarts
+# Solution: 
+# Update DNS every 5 mins with current IPs of instance
+# This will allow Splunk servers to persist communications using DNS
 
 # Example Execution: sudo bash /home/ubuntu/update_dns.sh
 # Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
@@ -12,7 +21,7 @@
 # chmod +x /home/ubuntu/update_dns.sh
 # Edit cron file for root user
 # sudo crontab -e
-# */5 * * * * sudo bash /home/ubuntu/update_dns.sh > /home/ubuntu/update_dns.sh.txt
+# */5 * * * * sudo bash /home/ubuntu/update_dns.sh > /home/ubuntu/update_dns_last_cron_run.log
 
 # Prepare script variables
 DNS_ZONE="bsides.dns.splunkstudy.club"
@@ -24,8 +33,8 @@ SERVER_INT_ADDR=`curl http://169.254.169.254/latest/meta-data/local-ipv4` || fai
 SERVER_EXT_ADDR=`curl http://169.254.169.254/latest/meta-data/public-ipv4` || fail
 AWS_INSTANCE_ID=`curl http://169.254.169.254/latest/meta-data/instance-id` || fail
 HOME_PATH="/home/ubuntu/"
-DNS_CMD_FILE=$HOME_PATH"nsupdate.txt"
-DNS_LOG_FILE=$HOME_PATH"nsupdate_log.txt"
+DNS_CMD_FILE=$HOME_PATH"update_dns_last_cmd.log"
+DNS_LOG_FILE=$HOME_PATH"update_dns.log"
 
 # look up splunk hostname in Splunk config files
 SERVER_FILE="/opt/splunk/etc/system/local/server.conf"
