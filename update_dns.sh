@@ -3,9 +3,10 @@
 # Written by Aleem Cummins - Splunk Study Club
 # Version 1.02 April 5th 2021
 
-# Example Execution: sudo bash ./update_dns.sh -s idx04
+# Example Execution: sudo bash /home/ubuntu/update_dns.sh
 # Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
 
+# Usage: sudo bash /home/ubuntu/update_dns.sh
 # To run as CRON job every five minutes as root user see https://crontab-generator.org/
 # Make script executable
 # chmod +x /home/ubuntu/update_dns.sh
@@ -14,38 +15,36 @@
 # */5 * * * * sudo bash /home/ubuntu/update_dns.sh > /home/ubuntu/update_dns.sh.txt
 
 # Prepare script variables
-UPDATE_TOKEN_NAME="tsig-227525.dynv6.com"
+DNS_ZONE="bsides.dns.splunkstudy.club"
+UPDATE_TOKEN="4ztzt3fDWr2Yv1A26P5YWnQV4dGQUO7tN/fVM7QqBd0="
+UPDATE_TOKEN_NAME="tsig-227759.dynv6.com"
 UPDATE_TOKEN_TYPE="hmac-md5" 
-UPDATE_TOKEN="LOwYIyqDDIbwqZcHFOnw2ZOsh8ISuefJUxDUUoHt4LQ="
 DNS_SERVER="ns1.dynv6.com"
-DNS_ZONE="dns.splunkstudy.club"
 SERVER_INT_ADDR=`curl http://169.254.169.254/latest/meta-data/local-ipv4` || fail
 SERVER_EXT_ADDR=`curl http://169.254.169.254/latest/meta-data/public-ipv4` || fail
 AWS_INSTANCE_ID=`curl http://169.254.169.254/latest/meta-data/instance-id` || fail
-
 HOME_PATH="/home/ubuntu/"
+DNS_CMD_FILE=$HOME_PATH"nsupdate.txt"
+DNS_LOG_FILE=$HOME_PATH"nsupdate_log.txt"
 
 # look up splunk hostname in Splunk config files
 SERVER_FILE="/opt/splunk/etc/system/local/server.conf"
 FORWARDER_FILE="/opt/splunkforwarder/etc/system/local/server.conf"
-
 if [ -f "$SERVER_FILE" ]; then
     echo "Splunk Server "$FILE" exists."
     SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunk/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12-`
+    DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"-ext."$DNS_ZONE
+    DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"-int."$DNS_ZONE
 elif [ -f "$FORWARDER_FILE" ]; then
     echo "Splunk Forwarder "$FILE" exists."
     SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunkforwarder/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12-`
+    DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"-ext."$DNS_ZONE
+    DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"-int."$DNS_ZONE
 else
     echo "Splunk Enterprise of Splunk Universal Forwarder is not installed under /opt/splunk or /opt/splunkforwarder"
-    SPLUNK_SERVERNAME=$SERVER_EXT_ADDR
+    DNS_A_RECORD_EXT=$SERVER_EXT_ADDR"-ext."$DNS_ZONE
+    DNS_A_RECORD_INT=$SERVER_INT_ADDR"-int."$DNS_ZONE
 fi
- echo "Splunk serverName is "$SPLUNK_SERVERNAME
-
-DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"_ext."$DNS_ZONE
-DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"_int."$DNS_ZONE
-DNS_CMD_FILE=$HOME_PATH"nsupdate.txt"
-DNS_LOG_FILE=$HOME_PATH"nsupdate_log.txt"
-
 NOW=$(date +"%Y-%m-%d %T")
 echo "Updating DNS Records for " $DNS_ZONE " on " $DNS_SERVER " at " $NOW
 echo "Updating "$DNS_A_RECORD_EXT " to " $SERVER_EXT_ADDR 
