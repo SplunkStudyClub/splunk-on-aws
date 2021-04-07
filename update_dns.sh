@@ -9,7 +9,7 @@
 # 2. Instances need to be shut down to minimise costs
 # 3. Splunk instances communcation breaks on restarts
 # Solution: 
-# Update DNS every 5 mins with current IPs of instance
+# Update DNS every 5 mins with current IPs of instance via a cron job
 # This will allow Splunk servers to persist communications using DNS
 
 # Example Execution: sudo bash /home/ubuntu/update_dns.sh
@@ -17,10 +17,8 @@
 
 # Usage: sudo bash /home/ubuntu/update_dns.sh
 # To run as CRON job every five minutes as root user see https://crontab-generator.org/
-# Make script executable
-# chmod +x /home/ubuntu/update_dns.sh
-# Edit cron file for root user
-# sudo crontab -e
+# Make script executable using chmod +x /home/ubuntu/update_dns.sh
+# Add entry in cron file for root user using sudo crontab -e
 # */5 * * * * sudo bash /home/ubuntu/update_dns.sh > /home/ubuntu/update_dns_last_cron_run.log
 
 # Prepare script variables
@@ -41,11 +39,13 @@ SERVER_FILE="/opt/splunk/etc/system/local/server.conf"
 FORWARDER_FILE="/opt/splunkforwarder/etc/system/local/server.conf"
 if [ -f "$SERVER_FILE" ]; then
     echo "Splunk Server "$FILE" exists."
+    # Read in the value for serverName from server.conf
     SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunk/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12-`
     DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"-ext."$DNS_ZONE
     DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"-int."$DNS_ZONE
 elif [ -f "$FORWARDER_FILE" ]; then
     echo "Splunk Forwarder "$FILE" exists."
+    # Read in the value for serverName from server.conf
     SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunkforwarder/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12-`
     DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"-ext."$DNS_ZONE
     DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"-int."$DNS_ZONE
