@@ -11,6 +11,7 @@
 # Solution: 
 # Update DNS every 5 mins with current IPs of instance via a cron job
 # This will allow Splunk servers to persist communications using DNS
+# Add this script to each of your free tier aws instances
 
 # Example Execution: sudo bash /home/ubuntu/update_dns.sh
 # Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
