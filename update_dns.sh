@@ -107,9 +107,9 @@ nsupdate $DNS_CMD_FILE
 # Display the nsupdate commands used for this update
 echo "nsupdate commands have been written to "$DNS_CMD_FILE" and will be overwritten next time script is executed"
 echo "-------------------"
+# Read files line by line for easier reading
 n=1
 while read line; do
-# reading each line
 echo $line
 n=$((n+1))
 done < $DNS_CMD_FILE
