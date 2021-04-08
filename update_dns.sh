@@ -23,6 +23,7 @@
 # */5 * * * * sudo bash /home/ubuntu/update_dns.sh > /home/ubuntu/update_dns_last_cron_run.log
 
 # Prepare script variables
+HOME_PATH="/home/ec2-user/"
 DNS_ZONE="bsides.dns.splunkstudy.club"
 UPDATE_TOKEN="4ztzt3fDWr2Yv1A26P5YWnQV4dGQUO7tN/fVM7QqBd0="
 UPDATE_TOKEN_NAME="tsig-227759.dynv6.com"
@@ -31,7 +32,6 @@ DNS_SERVER="ns1.dynv6.com"
 SERVER_INT_ADDR=`curl http://169.254.169.254/latest/meta-data/local-ipv4` || fail
 SERVER_EXT_ADDR=`curl http://169.254.169.254/latest/meta-data/public-ipv4` || fail
 AWS_INSTANCE_ID=`curl http://169.254.169.254/latest/meta-data/instance-id` || fail
-HOME_PATH="/home/ubuntu/"
 DNS_CMD_FILE=$HOME_PATH"update_dns_last_cmd.log"
 DNS_LOG_FILE=$HOME_PATH"update_dns.log"
 
@@ -40,14 +40,14 @@ SERVER_FILE="/opt/splunk/etc/system/local/server.conf"
 FORWARDER_FILE="/opt/splunkforwarder/etc/system/local/server.conf"
 if [ -f "$SERVER_FILE" ]; then
     echo "Splunk Server "$FILE" exists."
-    # Read in the value for serverName from server.conf
-    SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunk/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12-`
+    # Read in the value for serverName from server.conf and convert to lower case for DNS update
+    SPLUNK_SERVERNAME=`grep serverName /opt/splunk/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'`
     DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"-ext."$DNS_ZONE
     DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"-int."$DNS_ZONE
 elif [ -f "$FORWARDER_FILE" ]; then
     echo "Splunk Forwarder "$FILE" exists."
-    # Read in the value for serverName from server.conf
-    SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunkforwarder/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12-`
+    # Read in the value for serverName from server.conf and convert to lower case for DNS update
+    SPLUNK_SERVERNAME=`sudo grep serverName /opt/splunkforwarder/etc/system/local/server.conf | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'`
     DNS_A_RECORD_EXT=$SPLUNK_SERVERNAME"-ext."$DNS_ZONE
     DNS_A_RECORD_INT=$SPLUNK_SERVERNAME"-int."$DNS_ZONE
 else
@@ -55,6 +55,7 @@ else
     DNS_A_RECORD_EXT=$SERVER_EXT_ADDR"-ext."$DNS_ZONE
     DNS_A_RECORD_INT=$SERVER_INT_ADDR"-int."$DNS_ZONE
 fi
+
 NOW=$(date +"%Y-%m-%d %T")
 echo "Updating DNS Records for " $DNS_ZONE " on " $DNS_SERVER " at " $NOW
 echo "Updating "$DNS_A_RECORD_EXT " to " $SERVER_EXT_ADDR 
