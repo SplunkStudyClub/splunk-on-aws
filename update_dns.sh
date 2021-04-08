@@ -14,14 +14,14 @@
 # This will allow Splunk servers to persist communications using DNS
 # Add this script to each of your free tier aws instances
 
-# Example Execution: sudo bash /home/ubuntu/update_dns.sh -s ssh
+# Example Execution: sudo bash /home/ubuntu/update_dns.sh -s ssh -l true
 
 # Usage: sudo bash /home/ubuntu/update_dns.sh
 # To run as CRON job every five minutes as root user see https://crontab-generator.org/
 # Make script executable using chmod +x /home/ubuntu/update_dns.sh
 # Add entry in cron file for root user using sudo crontab -e
 # */5 * * * * sudo bash [scriptfolder]/update_dns.sh > [scriptfolder]/update_dns_last_cron_run.log
-# example */5 * * * * sudo bash /home/ubuntu/update_dns.sh -s ssh> /home/ubuntu/update_dns_last_cron_run.log
+# example */5 * * * * sudo bash /home/ubuntu/update_dns.sh -s ssh -l true> /home/ubuntu/update_dns_last_cron_run.log
 
 # Apply script arguments
 # Check if optional host is to be added to DNS to resolve to exteral IP. This could be useful for ssh lists
