@@ -2,6 +2,7 @@
 
 # Written by Aleem Cummins - Splunk Study Club
 # aleem@studysplunk.club
+# https://github.com/SplunkStudyClub/splunk-on-aws
 
 # This script is desiged for the free tier of AWS 
 # Problems being addressed: 
