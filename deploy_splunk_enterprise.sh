@@ -66,7 +66,7 @@ sudo -H -u $AWS_USERNAME $SPLUNK_HOME/bin/splunk start
 sudo $SPLUNK_HOME/bin/splunk set servername $SPLUNK_SERVER_NAME -auth admin:$SPLUNK_PASSWORD
 sudo $SPLUNK_HOME/bin/splunk set default-hostname $SPLUNK_SERVER_NAME -auth admin:$SPLUNK_PASSWORD
 
-if [ "$UPDATE_DNS" = true ] ; then
+if [ "$SLIM_DOWN" = true ] ; then
     echo "Slimming down Splunk instance"
     #on a free tier AWS reduce limit for free disk space before stop indexing to 500MB as default size of imstance in 8GiB
     sudo $SPLUNK_HOME/bin/splunk set minfreemb 500 -auth admin:$SPLUNK_PASSWORD
