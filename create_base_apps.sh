@@ -51,9 +51,10 @@ sudo mkdir $BASE_APP_FOLDER"/deployment_client/metadata"
 
 echo "[deployment-client]" >> $BASE_APP_FOLDER"/deployment_client/local/deploymentclient.conf"
 echo "phoneHomeIntervalInSecs = 15" >> $BASE_APP_FOLDER"/deployment_client/local/deploymentclient.conf"
-echo -e "" >> $BASE_APP_FOLDER"/deploymentclient.conf"
+echo -e "" >> $BASE_APP_FOLDER"/deployment_client/local/deploymentclient.conf"
 echo "[target-broker:deploymentServer]" >> $BASE_APP_FOLDER"/deployment_client/local/deploymentclient.conf"
 echo "targetUri = "$DEPLOYMENT_SERVER >> $BASE_APP_FOLDER"/deployment_client/local/deploymentclient.conf"
+
 echo "[install]" >> $BASE_APP_FOLDER"/deployment_client/local/app.conf"
 echo "state = enabled" >> $BASE_APP_FOLDER"/deployment_client/local/app.conf"
 echo -e "" >> $BASE_APP_FOLDER"/deployment_client/local/app.conf"
@@ -62,6 +63,7 @@ echo "check_for_updates = false" >> $BASE_APP_FOLDER"/deployment_client/local/ap
 echo "[ui]" >> $BASE_APP_FOLDER"/deployment_client/local/app.conf"
 echo "is_visible = false" >> $BASE_APP_FOLDER"/deployment_client/local/app.conf"   
 echo "is_manageable = false" >> $BASE_APP_FOLDER"/deployment_client/local/app.conf"
+
 echo "[]" >> $BASE_APP_FOLDER"/deployment_client/metadata/local.meta"
 echo "access = read : [ * ], write : [ admin ]" >> $BASE_APP_FOLDER"/deployment_client/metadata/local.meta"
 echo "export = system" >> $BASE_APP_FOLDER"/deployment_client/metadata/local.meta"
@@ -78,14 +80,14 @@ echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
 echo "[tcpout:primary_indexers]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
 echo "server = "$INDEX_SERVERS >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
 
-echo "[install]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "state = enabled" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "[package]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "check_for_updates = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "[ui]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "is_visible = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf" 
-echo "is_manageable = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
+echo "[install]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+echo "state = enabled" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+echo "[package]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+echo "check_for_updates = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+echo "[ui]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+echo "is_visible = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf" 
+echo "is_manageable = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
 
 echo "[]" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
 echo "access = read : [ * ], write : [ admin ]" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
@@ -104,7 +106,7 @@ if [ "$COPY_BASE_APPS" = true ] ; then
         sudo cp -R $BASE_APP_FOLDER/forwarder_outputs $SPLUNK_HOME_FOLDER/etc/apps
     fi
     echo "Restart Splunk for app updates to be applied"
-    sudo $SPLUNK_HOME/bin/splunk restart
+    sudo $SPLUNK_HOME_FOLDER/bin/splunk restart
 else
     echo "Apps are not being copied"
 fi

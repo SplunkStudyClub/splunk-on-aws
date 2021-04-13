@@ -16,7 +16,7 @@
 
 # Example Execution: sudo bash /home/ubuntu/update_dns.sh -s ssh -l true
 
-# Usage: sudo bash /home/ubuntu/update_dns.sh
+# Usage: sudo bash /home/ubuntu/update_dns.sh -l true
 # To run as CRON job every five minutes as root user see https://crontab-generator.org/
 # Make script executable using chmod +x /home/ubuntu/update_dns.sh
 # Add entry in cron file for root user using sudo crontab -e
@@ -25,6 +25,7 @@
 
 # Apply script arguments
 # Check if optional host is to be added to DNS to resolve to exteral IP. This could be useful for ssh lists
+echo "Number of parameters passed to this script is $#"
 while getopts s:l: flag
 do
     case "${flag}" in
@@ -34,7 +35,8 @@ do
 done
 
 # Prepare script variables
-HOME_PATH=$(dirname $0)
+HOME_PATH=$(dirname $(readlink -f $0))
+#HOME_PATH=$(dirname $0)
 DNS_ZONE="bsides.dns.splunkstudy.club"
 UPDATE_TOKEN="4ztzt3fDWr2Yv1A26P5YWnQV4dGQUO7tN/fVM7QqBd0="
 UPDATE_TOKEN_NAME="tsig-227759.dynv6.com"

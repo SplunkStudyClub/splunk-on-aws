@@ -4,11 +4,11 @@
 # aleem@studysplunk.club
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash deploy_splunk_forwarder.sh -h /opt -p testing123 -s uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -i "sh130-int.bsides.dns.splunkstudy.club:9997"
+# sudo bash deploy_splunk_forwarder.sh -h /opt -p testing123 -c true -s uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -i "sh130-int.bsides.dns.splunkstudy.club:9997"
 
 #Apply script arguments
 echo "Number of parameters passed to this script is $#"
-while getopts h:p:s:d:z:i: flag
+while getopts h:p:s:d:z:i:c: flag
 do
     case "${flag}" in
         h) SPLUNK_PARENT_FOLDER=${OPTARG};;
@@ -17,6 +17,7 @@ do
         d) UPDATE_DNS=${OPTARG};;
         z) DEPLOYMENT_SERVER=${OPTARG};;
         i) INDEX_SERVERS=${OPTARG};;
+        c) COPY_BASE_APPS=${OPTARG};;
    esac
 done
 
@@ -32,7 +33,7 @@ SPLUNK_VERSION="8.1.3"
 SPLUNK_PLATFORM="linux"
 SPLUNK_ARCHITECTURE="x86_64"
 SPLUNK_PRODUCT="universalforwarder"
-echo "INDEX_SERVERS="$INDEX_SERVERS
+
 # Retrieve the user that executed this script even if sudo command was used
 AWS_USERNAME="${SUDO_USER:-$USER}"
 echo "Splunk will be configured to run under the user "$AWS_USERNAME
@@ -146,7 +147,7 @@ echo "Restart Splunk sizing updates to be applied"
 sudo $SPLUNK_HOME/bin/splunk restart
 
 echo "---------------------------------------------"
-echo "Splunk Enterprise "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$AWS_USERNAME
+echo "Splunk Universal Forwarder "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$AWS_USERNAME
 SERVER_CONF=$SPLUNK_HOME_FOLDER"/etc/system/local/server.conf"
 SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'` 
 echo "Splunk Server Name has been set to " $SPLUNK_SERVERNAME" in "$SERVER_CONF
@@ -155,8 +156,17 @@ echo "---------------------------------------------"
 if [ "$UPDATE_DNS" = true ] ; then
     DNS_UPDATE_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/update_dns.sh"
     echo "Executing DNS Update Script " $DNS_UPDATE_SCRIPT
-    source $DNS_UPDATE_SCRIPT "-l true"
+    source $DNS_UPDATE_SCRIPT -l true
     echo "Finished executing DNS Update Script " $DNS_UPDATE_SCRIPT
 else    
     echo "DNS updating was not requested"
+fi
+
+if [ "$COPY_BASE_APPS" = true ] ; then
+    CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_base_apps.sh"
+    echo "Executing Base App Script " $CREATE_BASE_APPS_SCRIPT
+    source $CREATE_BASE_APPS_SCRIPT -c $COPY_BASE_APPS -h $SPLUNK_PARENT_FOLDER -i $INDEX_SERVERS -d $DEPLOYMENT_SERVER
+    echo "Finished executing Base App Script " $CREATE_BASE_APPS_SCRIPT
+else    
+    echo "Base apps are not being copied"
 fi
