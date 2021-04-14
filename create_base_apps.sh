@@ -107,8 +107,9 @@ if [ "$COPY_BASE_APPS" = true ] ; then
     fi
     echo "Restart Splunk for app updates to be applied"
     sudo $SPLUNK_HOME_FOLDER/bin/splunk restart
+
+    # Remove app files and folders
+    sudo rm -rf $BASE_APP_FOLDER || fail
 else
-    echo "Apps are not being copied"
+    echo "Apps have been created in "$BASE_APP_FOLDER
 fi
-# Remove app files and folders
-sudo rm -rf $BASE_APP_FOLDER || fail
