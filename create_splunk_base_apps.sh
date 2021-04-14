@@ -4,7 +4,7 @@
 # aleem@studysplunk.club
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash create_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" 
+# sudo bash create_splunk_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" 
 
 #Apply script arguments
 while getopts p:c:i:d: flag
@@ -36,7 +36,7 @@ else
 fi
 
 # Remove app files and folders if they exist
-BASE_APP_FOLDER=$SCRIPT_ABSOLUTE_PATH"/base_apps"
+BASE_APP_FOLDER=$SCRIPT_ABSOLUTE_PATH"/splunk_base_apps"
 sudo rm -rf $BASE_APP_FOLDER || fail
 
 #create apps
