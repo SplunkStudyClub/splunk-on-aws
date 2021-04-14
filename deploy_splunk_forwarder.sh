@@ -4,16 +4,15 @@
 # aleem@studysplunk.club
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash deploy_splunk_forwarder.sh -h /opt -p testing123 -c true -s uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -i "sh130-int.bsides.dns.splunkstudy.club:9997"
+# sudo bash deploy_splunk_forwarder.sh -p /opt -c true -h uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -i "sh130-int.bsides.dns.splunkstudy.club:9997"
 
 #Apply script arguments
 echo "Number of parameters passed to this script is $#"
-while getopts h:p:s:d:z:i:c: flag
+while getopts p:h:d:z:i:c: flag
 do
     case "${flag}" in
-        h) SPLUNK_PARENT_FOLDER=${OPTARG};;
-        p) SPLUNK_PASSWORD=${OPTARG};;
-        s) SPLUNK_SERVER_NAME=${OPTARG};;
+        p) SPLUNK_PARENT_FOLDER=${OPTARG};;
+        h) SPLUNK_SERVER_NAME=${OPTARG};;
         d) UPDATE_DNS=${OPTARG};;
         z) DEPLOYMENT_SERVER=${OPTARG};;
         i) INDEX_SERVERS=${OPTARG};;
@@ -29,6 +28,8 @@ echo "DEPLOYMENT_SERVER="$DEPLOYMENT_SERVER
 
 SPLUNK_HOME_FOLDER=$SPLUNK_PARENT_FOLDER"/splunkforwarder"
 SPLUNK_APP_FOLDER=$SPLUNK_HOME_FOLDER"/etc/apps"
+DNS_UPDATE_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/update_splunk_dns.sh"
+DNS_LOG_FILE=$SCRIPT_ABSOLUTE_PATH"/update_splunk_dns.log"
 SPLUNK_VERSION="8.1.3"
 SPLUNK_PLATFORM="linux"
 SPLUNK_ARCHITECTURE="x86_64"
@@ -56,7 +57,7 @@ sudo tar -xvf $SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER -C $SPLUNK_PARENT_FOLDER
 sudo rm -r $SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER || fail
 
 echo "Start Install Splunk as Root user"
-sudo $SPLUNK_HOME/bin/splunk start --accept-license --answer-yes --no-prompt --seed-passwd $SPLUNK_PASSWORD
+sudo $SPLUNK_HOME/bin/splunk start --accept-license --answer-yes #--no-prompt --seed-passwd $SPLUNK_PASSWORD
 
 echo "Changing ownership of "$SPLUNK_HOME" to "$AWS_USERNAME
 sudo $SPLUNK_HOME/bin/splunk stop
@@ -66,15 +67,15 @@ echo "Starting Splunk as a Non-Root OS User ("$AWS_USERNAME")"
 sudo -H -u $AWS_USERNAME $SPLUNK_HOME/bin/splunk start
 
 #set serverName and default hostname
-sudo $SPLUNK_HOME/bin/splunk set servername $SPLUNK_SERVER_NAME -auth admin:$SPLUNK_PASSWORD
-sudo $SPLUNK_HOME/bin/splunk set default-hostname $SPLUNK_SERVER_NAME -auth admin:$SPLUNK_PASSWORD
+sudo $SPLUNK_HOME/bin/splunk set servername $SPLUNK_SERVER_NAME 
+sudo $SPLUNK_HOME/bin/splunk set default-hostname $SPLUNK_SERVER_NAME 
 
 #output.conf for indexer
 
 if [ -z "$DEPLOYMENT_SERVER" ]; then
     echo "Not configuring as a deployment client"
 else
-    echo "Configuring Deployment Client for "$DEPLOYMENT_SERVER
+    echo "Configuring as deployment client for Deployment Server "$DEPLOYMENT_SERVER
     echo "Creating "$SPLUNK_APP_FOLDER"/deployment_client"
     sudo mkdir $SPLUNK_APP_FOLDER"/deployment_client"
 
@@ -153,15 +154,6 @@ SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12
 echo "Splunk Server Name has been set to " $SPLUNK_SERVERNAME" in "$SERVER_CONF
 echo "---------------------------------------------"
 
-if [ "$UPDATE_DNS" = true ] ; then
-    DNS_UPDATE_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/update_dns.sh"
-    echo "Executing DNS Update Script " $DNS_UPDATE_SCRIPT
-    source $DNS_UPDATE_SCRIPT -l true
-    echo "Finished executing DNS Update Script " $DNS_UPDATE_SCRIPT
-else    
-    echo "DNS updating was not requested"
-fi
-
 if [ "$COPY_BASE_APPS" = true ] ; then
     CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_base_apps.sh"
     echo "Executing Base App Script " $CREATE_BASE_APPS_SCRIPT
@@ -170,3 +162,31 @@ if [ "$COPY_BASE_APPS" = true ] ; then
 else    
     echo "Base apps are not being copied"
 fi
+
+if [ "$UPDATE_DNS" = true ] ; then
+    echo "Executing DNS Update Script " $DNS_UPDATE_SCRIPT
+    source $DNS_UPDATE_SCRIPT -l $DNS_LOG_FILE
+    echo "Finished executing DNS Update Script " $DNS_UPDATE_SCRIPT
+else    
+    echo "DNS updating was not requested"
+fi
+
+# Create a CRON job for updating DNS every 5 minutes
+CRON_CMD=$SCRIPT_ABSOLUTE_PATH"\cron_cmd.txt"
+crontab -l > $CRON_CMD
+# echo new cron into cron file
+echo "*/5 * * * * sudo bash "$DNS_UPDATE_SCRIPT -l $DNS_LOG_FILE >> $CRON_CMD
+# install new cron file
+crontab $CRON_CMD
+rm $CRON_CMD
+
+echo "";echo ""
+echo "---------------------------------------------"
+echo "Splunk Enterprise "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$AWS_USERNAME
+SERVER_CONF=$SPLUNK_HOME_FOLDER"/etc/system/local/server.conf"
+SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'` 
+echo "Splunk Server Name has been set to " $SPLUNK_SERVERNAME" in "$SERVER_CONF
+echo ""
+echo "Splunk universal forwarder can be reached via SSH at "$SPLUNK_SSH
+echo "Best wishes from Splunk Study Club";echo ""
+echo "---------------------------------------------"

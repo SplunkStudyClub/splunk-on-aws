@@ -4,13 +4,13 @@
 # aleem@studysplunk.club
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash create_base_apps.sh -h /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" 
+# sudo bash create_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" 
 
 #Apply script arguments
-while getopts h:c:i:d: flag
+while getopts p:c:i:d: flag
 do
     case "${flag}" in
-        h) SPLUNK_PARENT_FOLDER=${OPTARG};;
+        p) SPLUNK_PARENT_FOLDER=${OPTARG};;
         c) COPY_BASE_APPS=${OPTARG};;
         i) INDEX_SERVERS=${OPTARG};;
         d) DEPLOYMENT_SERVER=${OPTARG};;
@@ -110,3 +110,5 @@ if [ "$COPY_BASE_APPS" = true ] ; then
 else
     echo "Apps are not being copied"
 fi
+# Remove app files and folders
+sudo rm -rf $BASE_APP_FOLDER || fail
