@@ -54,7 +54,7 @@ sudo rm -r $SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER || fail
 
 echo "Start Install Splunk as root user"
 echo "Splunk will prompt for a new admin password"
-sudo $SPLUNK_HOME/bin/splunk start --accept-license --answer-yes #--no-prompt --seed-passwd $SPLUNK_PASSWORD
+sudo $SPLUNK_HOME/bin/splunk start --accept-license --answer-yes
 
 echo "Enabling SSL on DEFAULT port 8000 to connect to "$SPLUNK_SERVER_NAME
 echo "Port 443 is not set as any port below 1000 requires root access to it and splunk is running as non-root user "$AWS_USERNAME
@@ -70,6 +70,7 @@ if [ "$SLIM_DOWN" = true ] ; then
     sudo $SPLUNK_HOME/bin/splunk set minfreemb 500
 
     # Reduce the index sizes for the default indexes from 500GB to 500MB  as default size of imstance in 8GiB
+    # /etc/system/local/indexes.conf
     INDEX_SIZE=500
     echo "[main]" >> $INDEXES_CONF ; echo "maxTotalDataSizeMB = "$INDEX_SIZE >> $INDEXES_CONF ; echo -e "" >> $INDEXES_CONF
     echo "[_audit]" >> $INDEXES_CONF ; echo "maxTotalDataSizeMB = "$INDEX_SIZE >> $INDEXES_CONF ; echo -e "" >> $INDEXES_CONF
