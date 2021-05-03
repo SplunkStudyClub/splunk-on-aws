@@ -4,7 +4,9 @@
 # aleem@studysplunk.club
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash create_splunk_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" -u "splunk" -g "splunk"
+# sudo bash create_splunk_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" -u splunk -g splunk
+# for AWS instances using Ubuntu, a user name and a group name called ubuntu will already exist
+# read up on "adduser" command as a good learning opportunity
 
 # any amount of additional checking and validation can be added as necessary
 # this script uses a number of concepts and techniques that may prove valuable elsewhere
@@ -23,6 +25,15 @@ do
    esac
 done
 
+
+# Displaying the last modified time of scripts can be useful to avoid confusion when updating and testing
+echo "======================================================================================================================================="
+echo $(clear)
+LAST_MODIFIED_DATE_EPOCH=$(stat -c %Y $SCRIPT_ABSOLUTE_PATH"/"$SCRIPT_NAME)
+LAST_MODIFIED_DATE=$(date -d @$LAST_MODIFIED_DATE_EPOCH)
+echo "Script Last Modified:" $LAST_MODIFIED_DATE "("$SCRIPT_ABSOLUTE_PATH"/"$SCRIPT_NAME")"
+echo "======================================================================================================================================="
+
 # Prepare script variables
 SCRIPT_ABSOLUTE_PATH=$(dirname $(readlink -f $0))
 echo "SPLUNK_PARENT_FOLDER="$SPLUNK_PARENT_FOLDER
@@ -39,9 +50,28 @@ elif [ -d "$SPLUNK_PARENT_FOLDER/splunkforwarder" ];  then
     IS_FORWARDER=true
 else
     echo "Splunk is not installed yet ...... aborting"
+    exit
 fi
 
-# Best check is OS account for SPLUNK_OS_USERNAME already exists
+# Check is OS user already exists
+egrep -i "^$SPLUNK_OS_USERNAME:" /etc/passwd;
+if [ $? -eq 0 ]; then
+    echo "User ["$SPLUNK_OS_USERNAME"] Exists"
+else
+    echo "User ["$SPLUNK_OS_USERNAME"] does not exist"
+    echo "Please create user first ...... aborting"
+    exit
+fi
+
+# Check is OS group already exists
+egrep -i "^$SPLUNK_OS_USERGROUP:" /etc/group;
+if [ $? -eq 0 ]; then
+    echo "User Group [" $SPLUNK_OS_USERGROUP"] Exists"
+else
+    echo "User Group [" $SPLUNK_OS_USERGROUP"]  does not exist"
+    echo "Please create group first ...... aborting"
+    exit
+fi
 
 # Remove app files and folders if they exist
 BASE_APP_FOLDER=$SCRIPT_ABSOLUTE_PATH"/splunk_base_apps"
@@ -123,5 +153,15 @@ if [ "$COPY_BASE_APPS" = true ] ; then
     # Remove app files and folders
     sudo rm -rf $BASE_APP_FOLDER || fail
 else
-    echo "Apps have been created in "$BASE_APP_FOLDER
+    if [ "$IS_ENTERPRISE" = true ] ; then
+        #update permission recursively for copied folders and file of apps
+        sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/deployment_client
+        sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/forwarder_outputs
+    fi
+
+    if [ "$IS_FORWARDER" = true ] ; then
+        #update permission recursively for copied folders and file of apps
+        sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/deployment_client
+    fi
+   echo "Apps have been created in "$BASE_APP_FOLDER" with permissions set to "$SPLUNK_OS_USERNAME":"$SPLUNK_OS_USERGROUP
 fi
