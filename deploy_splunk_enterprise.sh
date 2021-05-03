@@ -4,12 +4,12 @@
 # aleem@cummins.me
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash deploy_splunk_enterprise.sh -p /opt -h sh01 -d true -s true -v 8.1.2 -b 545206cc9f70 -c true
+# sudo bash deploy_splunk_enterprise.sh -p /opt -h sh01 -v 8.1.2 -b 545206cc9f70 -c true -d true -s true
 # Script is coded for x86_64 on Linux. This can be updated as necessary
 
 #Apply script arguments
 echo "Number of parameters passed to this script is $#"
-while getopts p:h:d:s:v:b: flag
+while getopts p:h:d:s:v:b:c: flag
 do
     case "${flag}" in
         p) SPLUNK_PARENT_FOLDER=${OPTARG};;
