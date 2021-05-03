@@ -52,7 +52,7 @@ else
     exit
 fi
 
-# Check is OS user already exists
+# Check if OS user already exists
 egrep -i "^$SPLUNK_OS_USERNAME:" /etc/passwd;
 if [ $? -eq 0 ]; then
     #echo "User ["$SPLUNK_OS_USERNAME"] Exists"
@@ -62,7 +62,7 @@ else
     exit
 fi
 
-# Check is OS group already exists
+# Check if OS group already exists
 egrep -i "^$SPLUNK_OS_USERGROUP:" /etc/group;
 if [ $? -eq 0 ]; then
     #echo "User Group [" $SPLUNK_OS_USERGROUP"] Exists"
