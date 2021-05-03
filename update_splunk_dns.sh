@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Written by Aleem Cummins - Splunk Study Club
-# aleem@studysplunk.club
+# aleem@cummins.me
 # https://github.com/SplunkStudyClub/splunk-on-aws
 
 # This script is desiged for the free tier of AWS 

@@ -4,21 +4,19 @@
 # aleem@cummins.me
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash deploy_splunk_forwarder.sh -p /opt -c true -h uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -v 8.1.2 -b 545206cc9f70 -n true
+# sudo bash deploy_splunk_forwarder.sh -p /opt -h uf01 -v 8.1.2 -b 545206cc9f70 -c true -s true -d true
 
 #Apply script arguments
 echo "Number of parameters passed to this script is $#"
-while getopts p:h:d:z:i:c:v:b:n: flag
+while getopts p:h:v:b:c:d:s: flag
 do
     case "${flag}" in
         p) SPLUNK_PARENT_FOLDER=${OPTARG};;
         h) SPLUNK_SERVER_NAME=${OPTARG};;
-        d) UPDATE_DNS=${OPTARG};;
-        z) DEPLOYMENT_SERVER=${OPTARG};;
-        c) COPY_BASE_APPS=${OPTARG};;
         v) SPLUNK_SERVER_VERSION=${OPTARG};;
         b) SPLUNK_SERVER_BUILD=${OPTARG};;
-        n) CREATE_DNS_CRON_JOB=${OPTARG};;
+        c) CREATE_DNS_CRON_JOB=${OPTARG};;
+        d) UPDATE_DNS=${OPTARG};;
    esac
 done
 
@@ -49,7 +47,7 @@ echo "==========================================================================
 
 # Check if Splunk Universal Forwarder is already deployed
 # This is to prevent an existing Splunk instance being overwritten by mistake
-# To remove and existing instance the follwing commands are useful
+# To remove and existing instance the following commands are useful
 # sudo $SPLUNK_HOME/bin/splunk stop;# sudo rm -rf $SPLUNK_HOME
 
 if [ -f $SERVER_CONF ]; then
@@ -124,14 +122,14 @@ sudo $SPLUNK_HOME/bin/splunk enable boot-start -user $SPLUNK_OS_USERNAME
 echo "Restart Splunk sizing updates to be applied"
 sudo $SPLUNK_HOME/bin/splunk restart
 
-if [ "$COPY_BASE_APPS" = true ] ; then
-    CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_splunk_base_apps.sh"
-    echo "Executing Base App Script " $CREATE_BASE_APPS_SCRIPT
-    source $CREATE_BASE_APPS_SCRIPT -c true -p $SPLUNK_PARENT_FOLDER -d $DEPLOYMENT_SERVER -u $SPLUNK_OS_USERNAME -g $SPLUNK_OS_USERGROUP
-    echo "Finished executing Base App Script " $CREATE_BASE_APPS_SCRIPT
-else    
-    echo "Base apps are not being copied"
-fi
+#if [ "$COPY_BASE_APPS" = true ] ; then
+#    CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_splunk_base_apps.sh"
+#    echo "Executing Base App Script " $CREATE_BASE_APPS_SCRIPT
+#    source $CREATE_BASE_APPS_SCRIPT -c true -p $SPLUNK_PARENT_FOLDER -d $DEPLOYMENT_SERVER -u $SPLUNK_OS_USERNAME -g $SPLUNK_OS_USERGROUP -z "$BASE_APPS_REQUIRED" -r $SPLUNK_DEPLOYMENT_ROLE
+#    echo "Finished executing Base App Script " $CREATE_BASE_APPS_SCRIPT
+#else    
+#    echo "Base apps are not being copied"
+#fi
 
 if [ "$UPDATE_DNS" = true ] ; then
     echo "Executing DNS Update Script " $DNS_UPDATE_SCRIPT
@@ -148,9 +146,9 @@ if [ "$CREATE_DNS_CRON_JOB" = true ] ; then
     # Updating this script for cater for best practice in the location of update_splunk_dns.sh is a good learning opportunity
     CRON_CMD=$SCRIPT_ABSOLUTE_PATH"/cron_cmd.txt"
     crontab -l > $CRON_CMD
-    # echo new cron into cron file
-    echo "*/5 * * * * sudo bash "$DNS_UPDATE_SCRIPT -l $DNS_LOG_FILE >> $CRON_CMD
-    # install new cron file
+    # write new cron info to cron file
+    echo "*/5 * * * * sudo bash "$DNS_UPDATE_SCRIPT -l $DNS_LOG_FILE >> $CRON_CMD 
+    # add new cron job
     crontab $CRON_CMD
     rm $CRON_CMD
 else
@@ -159,10 +157,10 @@ fi
 
 echo "";echo ""
 echo "---------------------------------------------"
-echo "Splunk Enterprise "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$SPLUNK_OS_USERNAME
-SERVER_CONF=$SPLUNK_HOME_FOLDER"/etc/system/local/server.conf"
+echo "Splunk Enterprise "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME" and is running as OS user "$SPLUNK_OS_USERNAME
+SERVER_CONF=$SPLUNK_HOME"/etc/system/local/server.conf"
 SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'` 
-echo "Splunk Server Name has been set to " $SPLUNK_SERVERNAME" in "$SERVER_CONF
+echo "Splunk Server Name has been set to "$SPLUNK_SERVERNAME" in "$SERVER_CONF
 echo ""
 echo "Splunk universal forwarder can be reached via SSH at "$SPLUNK_SSH
 echo "Best wishes from Splunk Study Club";echo ""

@@ -9,16 +9,16 @@
 
 #Apply script arguments
 echo "Number of parameters passed to this script is $#"
-while getopts p:h:d:s:v:b:c: flag
+while getopts p:h:v:b:c:d:s: flag
 do
     case "${flag}" in
         p) SPLUNK_PARENT_FOLDER=${OPTARG};;
         h) SPLUNK_SERVER_NAME=${OPTARG};;
-        d) UPDATE_DNS=${OPTARG};;
-        s) SLIM_DOWN=${OPTARG};;
         v) SPLUNK_SERVER_VERSION=${OPTARG};;
         b) SPLUNK_SERVER_BUILD=${OPTARG};;
         c) CREATE_DNS_CRON_JOB=${OPTARG};;
+        d) UPDATE_DNS=${OPTARG};;
+        s) SLIM_DOWN=${OPTARG};;
    esac
 done
 
@@ -47,7 +47,7 @@ echo "==========================================================================
 
 # Check if Splunk is already deployed
 # This is to prevent an existing Splunk instance being overwritten by mistake
-# To remove and existing instance the follwing commands are useful
+# To remove and existing instance the following commands are useful
 # sudo $SPLUNK_HOME/bin/splunk stop;# sudo rm -rf $SPLUNK_HOME
 
 if [ -f $SERVER_CONF ]; then
@@ -59,7 +59,7 @@ if [ -f $SERVER_CONF ]; then
     echo $SPLUNK_HOME"/bin/splunk stop;rm -rf "$SPLUNK_HOME
     echo "sudo may be required dpending on the ownship of "$SPLUNK_HOME
     echo "Run ls -l "$SPLUNK_HOME" to check permissions"
-    echo "This will permanently destroy all settings and all data from the existing instance"
+    echo "Executing these command will permanently destroy all settings and all data from the existing instance"
     echo "CRON jobs created for previous testing can be examined as removed as necessary by running following command"
     echo "crontab -e"
     echo "Do not run these commands unless you are fully authorised and fully approved to do so and undertand to the consequences"
