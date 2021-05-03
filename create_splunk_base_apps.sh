@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Written by Aleem Cummins - Splunk Study Club
-# aleem@studysplunk.club
+# aleem@cummins.me
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
 # sudo bash create_splunk_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" -u splunk -g splunk
