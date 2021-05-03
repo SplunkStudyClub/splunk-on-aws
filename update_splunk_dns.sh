@@ -4,6 +4,7 @@
 # aleem@cummins.me
 # https://github.com/SplunkStudyClub/splunk-on-aws
 
+# You can request your own free Splunk Study Club DNS zone at http://ddns.splunkstudy.club
 # This script is desiged for the free tier of AWS 
 # However it is universal for any use case requiring dynamic DNS
 # Problems being addressed: 
