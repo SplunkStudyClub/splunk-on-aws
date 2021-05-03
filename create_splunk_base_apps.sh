@@ -21,7 +21,7 @@ do
     case "${flag}" in
         p) SPLUNK_PARENT_FOLDER=${OPTARG};;
         c) COPY_BASE_APPS=${OPTARG};;
-        i) INDEX_SERVERS=${OPTARG};;
+        i) INDEXER_SERVER_LIST=${OPTARG};;
         d) DEPLOYMENT_SERVER=${OPTARG};;
         u) SPLUNK_OS_USERNAME=${OPTARG};;
         g) SPLUNK_OS_USERGROUP=${OPTARG};;
@@ -126,7 +126,7 @@ if grep -q "forwarder_outputs" <<<$BASE_APPS_LIST; then
     echo "defaultGroup = primary_indexers" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
     echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
     echo "[tcpout:primary_indexers]" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
-    echo "server = "$INDEX_SERVERS >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
+    echo "server = "$INDEXER_SERVER_LIST >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
 
     echo "[install]" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/app.conf"
     echo "state = enabled" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/app.conf"
