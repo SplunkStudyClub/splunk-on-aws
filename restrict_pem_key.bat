@@ -1,6 +1,10 @@
+REM Written by Aleem Cummins - Splunk Study Club
+REM aleem@cummins.me
+REM https://github.com/SplunkStudyClub/splunk-on-aws
+REM Example usage
+
 @echo off
-REM example usage 
-REM  C:\Users\Aleem\Documents\GitHub\splunk-on-aws/restrict_pem_key.bat "D:\AWS_Keys\test\SplunkStudyClub.pem" "aleem"
+REM example usage C:\Users\Aleem\Documents\GitHub\splunk-on-aws/restrict_pem_key.bat "D:\AWS_Keys\test\SplunkStudyClub.pem" "aleem"
 echo Set parameter variables
 Set Key=%1
 Set UserName=%2
