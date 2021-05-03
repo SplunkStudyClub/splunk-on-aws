@@ -25,7 +25,6 @@ do
    esac
 done
 
-
 # Displaying the last modified time of scripts can be useful to avoid confusion when updating and testing
 echo "======================================================================================================================================="
 echo $(clear)
