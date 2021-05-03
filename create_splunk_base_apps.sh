@@ -4,16 +4,22 @@
 # aleem@studysplunk.club
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash create_splunk_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" 
+# sudo bash create_splunk_base_apps.sh -p /opt -c false -i "sh130-int.bsides.dns.splunkstudy.club:9997" -d "sh130-int.bsides.dns.splunkstudy.club:8089" -u "splunk" -g "splunk"
+
+# any amount of additional checking and validation can be added as necessary
+# this script uses a number of concepts and techniques that may prove valuable elsewhere
+# for example tokens and valiarbles could be passed as script arguments
 
 #Apply script arguments
-while getopts p:c:i:d: flag
+while getopts p:c:i:d:u:g: flag
 do
     case "${flag}" in
         p) SPLUNK_PARENT_FOLDER=${OPTARG};;
         c) COPY_BASE_APPS=${OPTARG};;
         i) INDEX_SERVERS=${OPTARG};;
         d) DEPLOYMENT_SERVER=${OPTARG};;
+        u) SPLUNK_OS_USERNAME=${OPTARG};;
+        g) SPLUNK_OS_USERGROUP=${OPTARG};;
    esac
 done
 
@@ -34,6 +40,8 @@ elif [ -d "$SPLUNK_PARENT_FOLDER/splunkforwarder" ];  then
 else
     echo "Splunk is not installed yet ...... aborting"
 fi
+
+# Best check is OS account for SPLUNK_OS_USERNAME already exists
 
 # Remove app files and folders if they exist
 BASE_APP_FOLDER=$SCRIPT_ABSOLUTE_PATH"/splunk_base_apps"
@@ -98,13 +106,17 @@ if [ "$COPY_BASE_APPS" = true ] ; then
         echo "Deployment Server: copying apps to " $BASE_APP_FOLDER"/deployment_client "$SPLUNK_HOME_FOLDER"/etc/deployment-apps"
         sudo cp -R $BASE_APP_FOLDER/deployment_client $SPLUNK_HOME_FOLDER/etc/deployment-apps
         sudo cp -R $BASE_APP_FOLDER/forwarder_outputs $SPLUNK_HOME_FOLDER/etc/deployment-apps
+        #update permission recursively for copied folders and file of apps
+        sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/deployment_client
+        sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/forwarder_outputs
     fi
 
     if [ "$IS_FORWARDER" = true ] ; then
         echo "Univesal Forwarder: copying apps to " $BASE_APP_FOLDER"/deployment_client "$SPLUNK_HOME_FOLDER"/etc/apps"
-        sudo cp -R $BASE_APP_FOLDER/deployment_client $SPLUNK_HOME_FOLDER/etc/apps
-        sudo cp -R $BASE_APP_FOLDER/forwarder_outputs $SPLUNK_HOME_FOLDER/etc/apps
+        #update permission recursively for copied folders and file of apps
+        sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/deployment_client
     fi
+
     echo "Restart Splunk for app updates to be applied"
     sudo $SPLUNK_HOME_FOLDER/bin/splunk restart
 

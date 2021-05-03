@@ -5,6 +5,7 @@
 # https://github.com/SplunkStudyClub/splunk-on-aws
 
 # This script is desiged for the free tier of AWS 
+# However it is universal for any use case requiring dynamic DNS
 # Problems being addressed: 
 # 1. IP of instances changes on every restart
 # 2. Instances need to be shut down to minimise costs
@@ -13,6 +14,13 @@
 # Update DNS every 5 mins with current IPs of instance via a cron job
 # This will allow Splunk servers to persist communications using DNS
 # Add this script to each of your free tier aws instances
+
+# any amount of additional checking and validation can be added as necessary
+# this script uses a number of concepts and techniques that may prove valuable elsewhere
+# for example tokens and valiarbles could be passed as script arguments
+
+# for dns record please avoid upper case and underscores
+# also watch out for browser cacheing. Ctrl+F5 can be useful for refreshing cache for URLs being reloaded
 
 # Example Execution: sudo bash /home/ubuntu/update_dns.sh -l /home/ubuntu/update_splunk_dns.log
 
