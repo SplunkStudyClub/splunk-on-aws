@@ -1,163 +1,133 @@
 #!/bin/sh
 
 # Written by Aleem Cummins - Splunk Study Club
-# aleem@studysplunk.club
+# aleem@cummins.me
 # https://github.com/SplunkStudyClub/splunk-on-aws
 # Example usage
-# sudo bash deploy_splunk_forwarder.sh -p /opt -c true -h uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -i "sh130-int.bsides.dns.splunkstudy.club:9997"
+# sudo bash deploy_splunk_forwarder.sh -p /opt -c true -h uf01 -d true -z "sh130-int.bsides.dns.splunkstudy.club:8089" -v 8.1.2 -b 545206cc9f70 -n true
 
 #Apply script arguments
 echo "Number of parameters passed to this script is $#"
-while getopts p:h:d:z:i:c: flag
+while getopts p:h:d:z:i:c:v:b:n: flag
 do
     case "${flag}" in
         p) SPLUNK_PARENT_FOLDER=${OPTARG};;
         h) SPLUNK_SERVER_NAME=${OPTARG};;
         d) UPDATE_DNS=${OPTARG};;
         z) DEPLOYMENT_SERVER=${OPTARG};;
-        i) INDEX_SERVERS=${OPTARG};;
         c) COPY_BASE_APPS=${OPTARG};;
+        v) SPLUNK_SERVER_VERSION=${OPTARG};;
+        b) SPLUNK_SERVER_BUILD=${OPTARG};;
+        n) CREATE_DNS_CRON_JOB=${OPTARG};;
    esac
 done
 
 # Prepare script variables
 SCRIPT_ABSOLUTE_PATH=$(dirname $(readlink -f $0))
+SCRIPT_NAME=${0##*/}
 echo "SCRIPT_ABSOLUTE_PATH="$SCRIPT_ABSOLUTE_PATH
-SPLUNK_INSTALLER="splunkforwarder-8.1.3-63079c59e632-Linux-x86_64.tgz"
 echo "DEPLOYMENT_SERVER="$DEPLOYMENT_SERVER
 
-SPLUNK_HOME_FOLDER=$SPLUNK_PARENT_FOLDER"/splunkforwarder"
-SPLUNK_APP_FOLDER=$SPLUNK_HOME_FOLDER"/etc/apps"
+SPLUNK_INSTALLER="splunkforwarder-"$SPLUNK_SERVER_VERSION"-"$SPLUNK_SERVER_BUILD"-Linux-x86_64.tgz"
+SPLUNK_HOME=$SPLUNK_PARENT_FOLDER"/splunkforwarder"
+SERVER_CONF=$SPLUNK_HOME"/etc/system/local/server.conf"
+REMOTE_SERVER_APP_FOLDER=$SPLUNK_HOME"/etc/apps"
+INDEXES_CONF=$SPLUNK_PARENT_FOLDER"/splunk/etc/system/local/indexes.conf"
 DNS_UPDATE_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/update_splunk_dns.sh"
 DNS_LOG_FILE=$SCRIPT_ABSOLUTE_PATH"/update_splunk_dns.log"
-SPLUNK_VERSION="8.1.3"
 SPLUNK_PLATFORM="linux"
 SPLUNK_ARCHITECTURE="x86_64"
 SPLUNK_PRODUCT="universalforwarder"
 
+# Displaying the last modified time of scripts can be useful to avoid confusion when updating and testing
+echo "======================================================================================================================================="
+echo $(clear)
+LAST_MODIFIED_DATE_EPOCH=$(stat -c %Y $SCRIPT_ABSOLUTE_PATH"/"$SCRIPT_NAME)
+LAST_MODIFIED_DATE=$(date -d @$LAST_MODIFIED_DATE_EPOCH)
+echo "Script Last Modified:" $LAST_MODIFIED_DATE "("$SCRIPT_ABSOLUTE_PATH"/"$SCRIPT_NAME")"
+echo "======================================================================================================================================="
+
+# Check if Splunk Universal Forwarder is already deployed
+# This is to prevent an existing Splunk instance being overwritten by mistake
+# To remove and existing instance the follwing commands are useful
+# sudo $SPLUNK_HOME/bin/splunk stop;# sudo rm -rf $SPLUNK_HOME
+
+if [ -f $SERVER_CONF ]; then
+    SPLUNK_INSTANCE_VERSION=`sudo $SPLUNK_HOME/bin/splunk version`
+    SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'` || fail
+    echo "Splunk Enterprise "$SPLUNK_INSTANCE_VERSION" is already installed on this instance with serverName of "$SPLUNK_SERVERNAME" specified in "$SERVER_CONF
+    echo "Aborting Install"
+    echo "The existing instance can be removed with the following commands"
+    echo $SPLUNK_HOME"/bin/splunk stop;rm -rf "$SPLUNK_HOME
+    echo "sudo may be required dpending on the ownship of "$SPLUNK_HOME
+    echo "Run ls -l "$SPLUNK_HOME" to check permissions"
+    echo "This will permanently destroy all settings and all data from the existing instance"
+    echo "CRON jobs created for previous testing can be examined as removed as necessary by running following command"
+    echo "crontab -e"
+    echo "Do not run these commands unless you are fully authorised and fully approved to do so and undertand to the consequences"
+    exit
+else
+    echo "Splunk Forwarder "$SPLUNK_SERVER_VERSION" ("$SPLUNK_SERVER_BUILD") will now be deployed to " $SPLUNK_PARENT_FOLDER"/splunkforwarder"
+fi
+
 # Retrieve the user that executed this script even if sudo command was used
-AWS_USERNAME="${SUDO_USER:-$USER}"
-echo "Splunk will be configured to run under the user "$AWS_USERNAME
+SPLUNK_OS_USERNAME="${SUDO_USER:-$USER}"
+SPLUNK_OS_USERGROUP="${SUDO_USER:-$USER}" #there is a macthing group name for user
+echo "Splunk will be configured to run under the user "$SPLUNK_OS_USERNAME
+
+# It is best practice to create user name account to use to run Splunk with non root privileges
+# For this script the username from the SSH login us being used for deployment
+# Other scripts from the Splunk Study Club GitHub respositiry cover best practice in full
+# Updating this script for cater for best practice is a good learing opportunity
+# The user account name and user account group could be passed as arguments
+# See create_splunk_base_apps.sh in the GitHub repository for an example of this
 
 #Create Splunk Home Folder
-sudo mkdir $SPLUNK_HOME_FOLDER
+sudo mkdir $SPLUNK_HOME
 
-echo "Creating Splunk global variables"
-export SPLUNK_HOME=$SPLUNK_HOME_FOLDER
-echo "New system variable SPLUNK_HOME created and set to "$SPLUNK_HOME_FOLDER
-export SPLUNK_DB=$SPLUNK_HOME/var/lib/splunk
-echo "New system variable SPLUNK_DB created and set to "$SPLUNK_DB
-echo "Downloading Splunk installer ("$SPLUNK_INSTALLER")"
-sudo wget -O $SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER "https://www.splunk.com/bin/splunk/DownloadActivityServlet?architecture="$SPLUNK_ARCHITECTURE"&platform="$SPLUNK_PLATFORM"&version="$SPLUNK_VERSION"&product="$SPLUNK_PRODUCT"&filename="$SPLUNK_INSTALLER"&wget=true"
+echo "Downloading Splunk installer ("$SPLUNK_INSTALLER") to " $SPLUNK_INSTALLER_PATH
+SPLUNK_INSTALLER_PATH=$SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER
+sudo wget -O $SPLUNK_INSTALLER_PATH "https://www.splunk.com/bin/splunk/DownloadActivityServlet?architecture="$SPLUNK_ARCHITECTURE"&platform="$SPLUNK_PLATFORM"&version="$SPLUNK_SERVER_VERSION"&product="$SPLUNK_PRODUCT"&filename="$SPLUNK_INSTALLER"&wget=true"
 
-echo "Extracting Splunk installation file to " $SPLUNK_HOME_FOLDER
+#check if file has been downloaded
+if [ -f $SPLUNK_INSTALLER_PATH ]; then
+    echo "Installer downloaded successfully to " $SPLUNK_INSTALLER_PATH
+else
+    echo "Download has failed for: " $SPLUNK_INSTALLER_PATH
+    echo "Aborting Install"
+    exit
+fi
+
+echo "Extracting Splunk installation file to " $SPLUNK_HOME
 sudo tar -xvf $SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER -C $SPLUNK_PARENT_FOLDER
 
-#echo "Deleting Splunk installer ("$SPLUNK_INSTALLER")"
+echo "Deleting Splunk installer ("$SPLUNK_INSTALLER")"
 sudo rm -r $SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER || fail
 
 echo "Start Install Splunk as Root user"
-sudo $SPLUNK_HOME/bin/splunk start --accept-license --answer-yes #--no-prompt --seed-passwd $SPLUNK_PASSWORD
+sudo $SPLUNK_HOME/bin/splunk start --accept-license --answer-yes
 
-echo "Changing ownership of "$SPLUNK_HOME" to "$AWS_USERNAME
+echo "Changing ownership of "$SPLUNK_HOME" to "$SPLUNK_OS_USERNAME
 sudo $SPLUNK_HOME/bin/splunk stop
-sudo chown -R $AWS_USERNAME $SPLUNK_HOME
+sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $SPLUNK_HOME
 
-echo "Starting Splunk as a Non-Root OS User ("$AWS_USERNAME")"
-sudo -H -u $AWS_USERNAME $SPLUNK_HOME/bin/splunk start
+echo "Starting Splunk as a Non-Root OS User ("$SPLUNK_OS_USERNAME")"
+sudo -H -u $SPLUNK_OS_USERNAME $SPLUNK_HOME/bin/splunk start
 
 #set serverName and default hostname
 sudo $SPLUNK_HOME/bin/splunk set servername $SPLUNK_SERVER_NAME 
 sudo $SPLUNK_HOME/bin/splunk set default-hostname $SPLUNK_SERVER_NAME 
 
-#output.conf for indexer
-
-if [ -z "$DEPLOYMENT_SERVER" ]; then
-    echo "Not configuring as a deployment client"
-else
-    echo "Configuring as deployment client for Deployment Server "$DEPLOYMENT_SERVER
-    echo "Creating "$SPLUNK_APP_FOLDER"/deployment_client"
-    sudo mkdir $SPLUNK_APP_FOLDER"/deployment_client"
-
-    SPLUNK_APP_FOLDER_LOCAL=$SPLUNK_APP_FOLDER"/deployment_client/local"
-    echo "Creating "$SPLUNK_APP_FOLDER_LOCAL
-    sudo mkdir $SPLUNK_APP_FOLDER_LOCAL
-
-    SPLUNK_APP_FOLDER_METADATA=$SPLUNK_APP_FOLDER"/deployment_client/metadata"
-    echo "Creating "$SPLUNK_APP_FOLDER_METADATA
-    sudo mkdir $SPLUNK_APP_FOLDER_METADATA
-
-    # Create a deployment client app
-    echo "[deployment-client]" >> $SPLUNK_APP_FOLDER_LOCAL"/deploymentclient.conf"
-    echo "phoneHomeIntervalInSecs = 15" >> $SPLUNK_APP_FOLDER_LOCAL"/deploymentclient.conf"
-    echo -e "" >> $SPLUNK_APP_FOLDER_LOCAL"/deploymentclient.conf"
-    echo "[target-broker:deploymentServer]" >> $SPLUNK_APP_FOLDER_LOCAL"/deploymentclient.conf"
-    echo "targetUri = "$DEPLOYMENT_SERVER >> $SPLUNK_APP_FOLDER_LOCAL"/deploymentclient.conf"
-    echo "[install]" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"
-    echo "state = enabled" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"
-    echo -e "" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"
-    echo "[package]" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"
-    echo "check_for_updates = false" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"   
-    echo "[ui]" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"
-    echo "is_visible = false" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"   
-    echo "is_manageable = false" >> $SPLUNK_APP_FOLDER_LOCAL"/app.conf"   
-    echo "[]" >> $SPLUNK_APP_FOLDER_METADATA"/local.meta"
-    echo "access = read : [ * ], write : [ admin ]" >> $SPLUNK_APP_FOLDER_METADATA"/local.meta"
-    echo "export = system" >> $SPLUNK_APP_FOLDER_METADATA"/local.meta"
-fi
-
-if [ -z "$INDEX_SERVERS" ]; then
-    echo "Not configuring forwarding to indexers"
-else
-    echo "Configuring forwarding to indexers "$INDEX_SERVERS
-    echo "Creating "$SPLUNK_APP_FOLDER"/forwarder_outputs"
-    sudo mkdir $SPLUNK_APP_FOLDER"/forwarder_outputs"
-
-    SPLUNK_APP_FOLDER_IDX_LOCAL=$SPLUNK_APP_FOLDER"/forwarder_outputs/local"
-    echo "Creating "$SPLUNK_APP_FOLDER_IDX_LOCAL
-    sudo mkdir $SPLUNK_APP_FOLDER_IDX_LOCAL
-
-    SPLUNK_APP_FOLDER_IDX_METADATA=$SPLUNK_APP_FOLDER"/forwarder_outputs/metadata"
-    echo "Creating "$SPLUNK_APP_FOLDER_IDX_METADATA
-    sudo mkdir $SPLUNK_APP_FOLDER_IDX_METADATA
-
-    echo "[tcpout]" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/outputs.conf"
-    echo "defaultGroup = primary_indexers" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/outputs.conf"
-    echo -e "" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/outputs.conf"
-    echo "[tcpout:primary_indexers]" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/outputs.conf"
-    echo "server = "$INDEX_SERVERS >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/outputs.conf"
-
-    echo "[install]" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"
-    echo "state = enabled" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"
-    echo -e "" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"
-    echo "[package]" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"
-    echo "check_for_updates = false" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"   
-    echo "[ui]" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"
-    echo "is_visible = false" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"   
-    echo "is_manageable = false" >> $SPLUNK_APP_FOLDER_IDX_LOCAL"/app.conf"  
-    
-    echo "[]" >> $SPLUNK_APP_FOLDER_IDX_METADATA"/local.meta"
-    echo "access = read : [ * ], write : [ admin ]" >> $SPLUNK_APP_FOLDER_IDX_METADATA"/local.meta"
-    echo "export = system" >> $SPLUNK_APP_FOLDER_IDX_METADATA"/local.meta"
-fi
-
-echo "Enable Splunk on Boot as OS user " $AWS_USERNAME
-sudo $SPLUNK_HOME/bin/splunk enable boot-start -user $AWS_USERNAME
+echo "Enable Splunk on Boot as OS user " $SPLUNK_OS_USERNAME
+sudo $SPLUNK_HOME/bin/splunk enable boot-start -user $SPLUNK_OS_USERNAME
 
 echo "Restart Splunk sizing updates to be applied"
 sudo $SPLUNK_HOME/bin/splunk restart
 
-echo "---------------------------------------------"
-echo "Splunk Universal Forwarder "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$AWS_USERNAME
-SERVER_CONF=$SPLUNK_HOME_FOLDER"/etc/system/local/server.conf"
-SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'` 
-echo "Splunk Server Name has been set to " $SPLUNK_SERVERNAME" in "$SERVER_CONF
-echo "---------------------------------------------"
-
 if [ "$COPY_BASE_APPS" = true ] ; then
-    CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_base_apps.sh"
+    CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_splunk_base_apps.sh"
     echo "Executing Base App Script " $CREATE_BASE_APPS_SCRIPT
-    source $CREATE_BASE_APPS_SCRIPT -c $COPY_BASE_APPS -h $SPLUNK_PARENT_FOLDER -i $INDEX_SERVERS -d $DEPLOYMENT_SERVER
+    source $CREATE_BASE_APPS_SCRIPT -c true -p $SPLUNK_PARENT_FOLDER -d $DEPLOYMENT_SERVER -u $SPLUNK_OS_USERNAME -g $SPLUNK_OS_USERGROUP
     echo "Finished executing Base App Script " $CREATE_BASE_APPS_SCRIPT
 else    
     echo "Base apps are not being copied"
@@ -171,18 +141,25 @@ else
     echo "DNS updating was not requested"
 fi
 
-# Create a CRON job for updating DNS every 5 minutes
-CRON_CMD=$SCRIPT_ABSOLUTE_PATH"\cron_cmd.txt"
-crontab -l > $CRON_CMD
-# echo new cron into cron file
-echo "*/5 * * * * sudo bash "$DNS_UPDATE_SCRIPT -l $DNS_LOG_FILE >> $CRON_CMD
-# install new cron file
-crontab $CRON_CMD
-rm $CRON_CMD
+if [ "$CREATE_DNS_CRON_JOB" = true ] ; then
+    echo "A CRON job is being created for the DNS updates at 5 minute intervals"
+    # Create a CRON job for updating DNS every 5 minutes
+    # The script places the script in the home folder of the SSH user 
+    # Updating this script for cater for best practice in the location of update_splunk_dns.sh is a good learning opportunity
+    CRON_CMD=$SCRIPT_ABSOLUTE_PATH"/cron_cmd.txt"
+    crontab -l > $CRON_CMD
+    # echo new cron into cron file
+    echo "*/5 * * * * sudo bash "$DNS_UPDATE_SCRIPT -l $DNS_LOG_FILE >> $CRON_CMD
+    # install new cron file
+    crontab $CRON_CMD
+    rm $CRON_CMD
+else
+    echo "CRON job creation was not requested"
+fi
 
 echo "";echo ""
 echo "---------------------------------------------"
-echo "Splunk Enterprise "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$AWS_USERNAME
+echo "Splunk Enterprise "$SPLUNK_VERSION" has been successfully installed at "$SPLUNK_HOME_FOLDER" and is running as OS user "$SPLUNK_OS_USERNAME
 SERVER_CONF=$SPLUNK_HOME_FOLDER"/etc/system/local/server.conf"
 SPLUNK_SERVERNAME=`grep serverName $SERVER_CONF | sed 's/[ ][ ]*//g' | cut -c 12- | sed -e 's/\(.*\)/\L\1/'` 
 echo "Splunk Server Name has been set to " $SPLUNK_SERVERNAME" in "$SERVER_CONF

@@ -55,7 +55,7 @@ fi
 # Check is OS user already exists
 egrep -i "^$SPLUNK_OS_USERNAME:" /etc/passwd;
 if [ $? -eq 0 ]; then
-    echo "User ["$SPLUNK_OS_USERNAME"] Exists"
+    #echo "User ["$SPLUNK_OS_USERNAME"] Exists"
 else
     echo "User ["$SPLUNK_OS_USERNAME"] does not exist"
     echo "Please create user first ...... aborting"
@@ -65,7 +65,7 @@ fi
 # Check is OS group already exists
 egrep -i "^$SPLUNK_OS_USERGROUP:" /etc/group;
 if [ $? -eq 0 ]; then
-    echo "User Group [" $SPLUNK_OS_USERGROUP"] Exists"
+    #echo "User Group [" $SPLUNK_OS_USERGROUP"] Exists"
 else
     echo "User Group [" $SPLUNK_OS_USERGROUP"]  does not exist"
     echo "Please create group first ...... aborting"
@@ -105,30 +105,32 @@ echo "[]" >> $BASE_APP_FOLDER"/deployment_client/metadata/local.meta"
 echo "access = read : [ * ], write : [ admin ]" >> $BASE_APP_FOLDER"/deployment_client/metadata/local.meta"
 echo "export = system" >> $BASE_APP_FOLDER"/deployment_client/metadata/local.meta"
 
-# Create a forwarder output app
-echo "Creating "$BASE_APP_FOLDER"/forwarder_outputs"
-sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs"
-sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs/local"
-sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs/metadata"
+if [ "$IS_ENTERPRISE" = true ] ; then
+    # Create a forwarder output app
+    echo "Creating "$BASE_APP_FOLDER"/forwarder_outputs"
+    sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs"
+    sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs/local"
+    sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs/metadata"
 
-echo "[tcpout]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "defaultGroup = primary_indexers" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "[tcpout:primary_indexers]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
-echo "server = "$INDEX_SERVERS >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
+    echo "[tcpout]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
+    echo "defaultGroup = primary_indexers" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
+    echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
+    echo "[tcpout:primary_indexers]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
+    echo "server = "$INDEX_SERVERS >> $BASE_APP_FOLDER"/forwarder_outputs/local/outputs.conf"
 
-echo "[install]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
-echo "state = enabled" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
-echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
-echo "[package]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
-echo "check_for_updates = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
-echo "[ui]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
-echo "is_visible = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf" 
-echo "is_manageable = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo "[install]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo "state = enabled" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo -e "" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo "[package]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo "check_for_updates = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo "[ui]" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
+    echo "is_visible = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf" 
+    echo "is_manageable = false" >> $BASE_APP_FOLDER"/forwarder_outputs/local/app.conf"
 
-echo "[]" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
-echo "access = read : [ * ], write : [ admin ]" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
-echo "export = system" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
+    echo "[]" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
+    echo "access = read : [ * ], write : [ admin ]" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
+    echo "export = system" >> $BASE_APP_FOLDER"/forwarder_outputs/metadata/local.meta"
+fi
 
 if [ "$COPY_BASE_APPS" = true ] ; then
     if [ "$IS_ENTERPRISE" = true ] ; then
@@ -143,6 +145,7 @@ if [ "$COPY_BASE_APPS" = true ] ; then
     if [ "$IS_FORWARDER" = true ] ; then
         echo "Univesal Forwarder: copying apps to " $BASE_APP_FOLDER"/deployment_client "$SPLUNK_HOME_FOLDER"/etc/apps"
         #update permission recursively for copied folders and file of apps
+        sudo cp -R $BASE_APP_FOLDER/deployment_client $SPLUNK_HOME_FOLDER/etc/apps
         sudo chown -R $SPLUNK_OS_USERNAME:$SPLUNK_OS_USERGROUP $BASE_APP_FOLDER/deployment_client
     fi
 
