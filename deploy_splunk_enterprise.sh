@@ -49,6 +49,7 @@ echo "==========================================================================
 # This is to prevent an existing Splunk instance being overwritten by mistake
 # To remove and existing instance the following commands are useful
 # sudo $SPLUNK_HOME/bin/splunk stop;# sudo rm -rf $SPLUNK_HOME
+# This code could be updated to also check if a universal forwarder may be already installed as a learning opportunity
 
 if [ -f $SERVER_CONF ]; then
     SPLUNK_INSTANCE_VERSION=`sudo $SPLUNK_HOME/bin/splunk version`
@@ -71,29 +72,21 @@ fi
 # Retrieve the user that executed this script even if sudo command was used
 AWS_USERNAME="${SUDO_USER:-$USER}"
 
-# It is best practice to create user name account to use to run Splunk with non root privileges
-# For this script the username from the SSH login us being used for deployment
+# It is best practice to create user account to use to run Splunk with non root privileges
+# For this script the username from the SSH login is being used for deployment
 # Other scripts from the Splunk Study Club GitHub respositiry cover best practice in full
-# Updating this script for cater for best practice is a good learing opportunity
+# Updating this script for cater for best practice is a good learing opportunity and is why we have done it this way
 # The user account name and user account group could be passed as arguments
 # See create_splunk_base_apps.sh in the GitHub repository for an example of this
 
 echo "Splunk will be configured to run under the user "$AWS_USERNAME
 
 echo "Creating Splunk Home Folder "$SPLUNK_HOME
-sudo mkdir $SPLUNK_HOME
-
-#echo "Creating Splunk global variables"
-#export SPLUNK_HOME=$SPLUNK_HOME
-#echo "New system variable SPLUNK_HOME created and set to "$SPLUNK_HOME
-#export SPLUNK_DB=$SPLUNK_HOME/var/lib/splunk
-#echo "New system variable SPLUNK_DB created and set to "$SPLUNK_DB
-
+sudo mkdir -p $SPLUNK_HOME
 
 echo "Downloading Splunk installer ("$SPLUNK_INSTALLER") to " $SPLUNK_INSTALLER_PATH
 SPLUNK_INSTALLER_PATH=$SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER
 sudo wget -O $SPLUNK_INSTALLER_PATH "https://www.splunk.com/bin/splunk/DownloadActivityServlet?architecture="$SPLUNK_ARCHITECTURE"&platform="$SPLUNK_PLATFORM"&version="$SPLUNK_SERVER_VERSION"&product="$SPLUNK_PRODUCT"&filename="$SPLUNK_INSTALLER"&wget=true"
-
 
 #check if file has been downloaded
 if [ -f $SPLUNK_INSTALLER_PATH ]; then

@@ -49,6 +49,7 @@ echo "==========================================================================
 # This is to prevent an existing Splunk instance being overwritten by mistake
 # To remove and existing instance the following commands are useful
 # sudo $SPLUNK_HOME/bin/splunk stop;# sudo rm -rf $SPLUNK_HOME
+# This code could be updated to also check if a Splunk enterprise instance may be already installed as a learning opportunity
 
 if [ -f $SERVER_CONF ]; then
     SPLUNK_INSTANCE_VERSION=`sudo $SPLUNK_HOME/bin/splunk version`
@@ -73,15 +74,15 @@ SPLUNK_OS_USERNAME="${SUDO_USER:-$USER}"
 SPLUNK_OS_USERGROUP="${SUDO_USER:-$USER}" #there is a macthing group name for user
 echo "Splunk will be configured to run under the user "$SPLUNK_OS_USERNAME
 
-# It is best practice to create user name account to use to run Splunk with non root privileges
-# For this script the username from the SSH login us being used for deployment
+# It is best practice to create user account to use to run Splunk with non root privileges
+# For this script the username from the SSH login is being used for deployment
 # Other scripts from the Splunk Study Club GitHub respositiry cover best practice in full
-# Updating this script for cater for best practice is a good learing opportunity
+# Updating this script for cater for best practice is a good learing opportunity and is why we have done it this way
 # The user account name and user account group could be passed as arguments
 # See create_splunk_base_apps.sh in the GitHub repository for an example of this
 
 #Create Splunk Home Folder
-sudo mkdir $SPLUNK_HOME
+sudo mkdir -p $SPLUNK_HOME
 
 echo "Downloading Splunk installer ("$SPLUNK_INSTALLER") to " $SPLUNK_INSTALLER_PATH
 SPLUNK_INSTALLER_PATH=$SCRIPT_ABSOLUTE_PATH"/"$SPLUNK_INSTALLER
@@ -121,15 +122,6 @@ sudo $SPLUNK_HOME/bin/splunk enable boot-start -user $SPLUNK_OS_USERNAME
 
 echo "Restart Splunk sizing updates to be applied"
 sudo $SPLUNK_HOME/bin/splunk restart
-
-#if [ "$COPY_BASE_APPS" = true ] ; then
-#    CREATE_BASE_APPS_SCRIPT=$SCRIPT_ABSOLUTE_PATH"/create_splunk_base_apps.sh"
-#    echo "Executing Base App Script " $CREATE_BASE_APPS_SCRIPT
-#    source $CREATE_BASE_APPS_SCRIPT -c true -p $SPLUNK_PARENT_FOLDER -d $DEPLOYMENT_SERVER -u $SPLUNK_OS_USERNAME -g $SPLUNK_OS_USERGROUP -z "$BASE_APPS_REQUIRED" -r $SPLUNK_DEPLOYMENT_ROLE
-#    echo "Finished executing Base App Script " $CREATE_BASE_APPS_SCRIPT
-#else    
-#    echo "Base apps are not being copied"
-#fi
 
 if [ "$UPDATE_DNS" = true ] ; then
     echo "Executing DNS Update Script " $DNS_UPDATE_SCRIPT

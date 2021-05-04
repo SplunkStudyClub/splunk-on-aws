@@ -35,8 +35,10 @@ do
     esac
 done
 
+
 # Prepare script variables
 HOME_PATH=$(dirname $(readlink -f $0))
+# Some of these value could be added as script parameters as a learning opportunity
 DNS_ZONE="bsides.dns.splunkstudy.club"
 UPDATE_TOKEN="4ztzt3fDWr2Yv1A26P5YWnQV4dGQUO7tN/fVM7QqBd0="
 UPDATE_TOKEN_NAME="tsig-227759.dynv6.com"

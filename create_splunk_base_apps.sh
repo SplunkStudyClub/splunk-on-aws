@@ -43,7 +43,7 @@ SCRIPT_ABSOLUTE_PATH=$(dirname $(readlink -f $0))
 SCRIPT_NAME=${0##*/}
 BASE_APP_FOLDER=$SCRIPT_ABSOLUTE_PATH"/splunk_base_apps"
 
-# Check which instance of Splunk is deployed
+# Check if an instance of Splunk is already deployed
 if [ -d $SPLUNK_PARENT_FOLDER"/splunk" ]; then
     SPLUNK_HOME=$SPLUNK_PARENT_FOLDER"/splunk"
     IS_ENTERPRISE=true
@@ -82,13 +82,13 @@ echo "BASE_APPS_LIST="$BASE_APPS_LIST
 if grep -q "deployment_client" <<<$BASE_APPS_LIST; then
     #create apps
     echo "Creating deployment_client app files and folders"
-    sudo mkdir $BASE_APP_FOLDER
+    sudo mkdir -p $BASE_APP_FOLDER
 
     # Create a deployment client app
     echo "Creating "$BASE_APP_FOLDER"/deployment_client_app"
-    sudo mkdir $BASE_APP_FOLDER"/deployment_client_app"
-    sudo mkdir $BASE_APP_FOLDER"/deployment_client_app/local"
-    sudo mkdir $BASE_APP_FOLDER"/deployment_client_app/metadata"
+    sudo mkdir -p $BASE_APP_FOLDER"/deployment_client_app"
+    sudo mkdir -p $BASE_APP_FOLDER"/deployment_client_app/local"
+    sudo mkdir -p $BASE_APP_FOLDER"/deployment_client_app/metadata"
 
     echo "[deployment-client]" >> $BASE_APP_FOLDER"/deployment_client_app/local/deploymentclient.conf"
     echo "phoneHomeIntervalInSecs = 15" >> $BASE_APP_FOLDER"/deployment_client_app/local/deploymentclient.conf"
@@ -115,12 +115,12 @@ fi
 if grep -q "forwarder_outputs" <<<$BASE_APPS_LIST; then
     # Create a forwarder output app
     echo "Creating forwarder_outputs_app files and folders"
-    sudo mkdir $BASE_APP_FOLDER
+    sudo mkdir -p $BASE_APP_FOLDER
     
     echo "Creating "$BASE_APP_FOLDER"/forwarder_outputs_app"
-    sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs_app"
-    sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs_app/local"
-    sudo mkdir $BASE_APP_FOLDER"/forwarder_outputs_app/metadata"
+    sudo mkdir -p $BASE_APP_FOLDER"/forwarder_outputs_app"
+    sudo mkdir -p $BASE_APP_FOLDER"/forwarder_outputs_app/local"
+    sudo mkdir -p $BASE_APP_FOLDER"/forwarder_outputs_app/metadata"
 
     echo "[tcpout]" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
     echo "defaultGroup = primary_indexers" >> $BASE_APP_FOLDER"/forwarder_outputs_app/local/outputs.conf"
