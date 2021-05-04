@@ -7,4 +7,4 @@ To request your own free Splunk Study Club DNS zone visit http://ddns.splunkstud
 
 If you need at assistance please visit http://slack.splunkstudy.club
 
-I will add the link to the Splunk BSides21 session when it is published
+I will add the link to the video of the Splunk BSides21 session when it is published
