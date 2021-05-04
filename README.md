@@ -20,4 +20,4 @@ Feeback would be really appreciated for our new Splunk Study Club community init
 
 We are always happy to speak at Splunk User Groups and other events, anywhere and anytime
 
-Best wishes from Splunk Study Club
+Best wishes from Splunk Study Club.
