@@ -12,12 +12,12 @@ To request your own free Splunk Study Club DNS zone visit http://ddns.splunkstud
 
 If you need at assistance please visit http://slack.splunkstudy.club
 
-I will add the link to the video of the Splunk BSides21 session when it is published
+We will add the link to the video of the Splunk BSides21 session when it is published
 
 These scripts have some useful techniques that may inform other scripting projects you may have.
 
 Feeback would be really appreciated for our new Splunk Study Club community initiative
 
-We are always happy to speak and Splunk User Groups, anywhere and anytime
+We are always happy to speak at Splunk User Groups and other events, anywhere and anytime
 
 Best wishes from Splunk Study Club
